@@ -5,9 +5,9 @@
 #include <WiFiManager.h>
 #include <Ticker.h>
 
-//#define LOG_ENABLED 1
+#define LOG_ENABLED 1
 
-#define HOSTNAME_PREFIX "tc-roboctrl-"
+#define HOSTNAME_PREFIX "tc-roboctrl2-"
 
 String chipId = String(ESP.getChipId(),HEX);
 Scheduler scheduler;

@@ -1,7 +1,5 @@
 
 WiFiEventHandler wifiIpHandler;
-bool wifiShouldSaveConfig;
-bool wifiGotIpFlag;
 
 void wifiResetAndRestart() {
   logInfo("WiFi reset in progress");
@@ -29,20 +27,20 @@ void wifiSetup() {
   if (WiFi.getMode() != WIFI_STA) WiFi.mode(WIFI_STA);
 
   logInfo("Connecting to WiFi...");
-  Serial.print("RC\n");
-  wifiGotIpFlag = false;
+  btnConnectFlag = true;
+  btnUpdateLeds();
 
   wifiIpHandler = WiFi.onStationModeGotIP([](const WiFiEventStationModeGotIP & evt) {
     // this executes when module reconnects and gets IP from DHCP
     // can be called multiple times
-    wifiGotIpFlag = true;
+    btnConnectFlag = false;
+    btnUpdateLeds();
     logInfo("WiFi connected successfuly");
     logValue("Got IP: ", evt.ip);
   });
 
   if (WiFi.SSID() == "") {
     logInfo("No saved credentials");
-    //pixelsSetAnimState(PIXELS_ANIM_VIOLET);
     wifiStartAp();
   } else if (!WiFi.isConnected()) {
     logValue("Stored SSID: ", WiFi.SSID());

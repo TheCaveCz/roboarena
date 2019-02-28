@@ -1,10 +1,11 @@
 
 void setup() {
   Serial.begin(115200);
-  logInfo("Roboarena ctrl!!!");
+  logInfo("Roboarena ctrl2!!!");
 
+  ledsSetup();
+  btnSetup();
   otaSetup();
-  parserSetup();
   wifiSetup();
   controlSetup();
 }
@@ -12,9 +13,4 @@ void setup() {
 void loop() {
   ArduinoOTA.handle();
   scheduler.execute();
-
-  if (wifiGotIpFlag) {
-    wifiGotIpFlag = false;
-    Serial.print("RD\n");
-  }
 }
