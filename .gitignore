@@ -1,0 +1,11 @@
+.DS_Store
+*.b#?
+*.s#?
+*.log
+*.lck
+*.pro
+
+out
+*.class
+hs_err_pid*
+workspace.xml
