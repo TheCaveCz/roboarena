@@ -1,5 +1,6 @@
 Task controlTask(20, TASK_FOREVER, &controlTick, &scheduler, false);
 WiFiUDP controlUdp;
+IPAddress controlBroadcast(255, 255, 255, 255);
 
 #define CONTROL_PORT 44123
 #define CONTROL_PACKET_MAGIC 0x62
@@ -13,7 +14,6 @@ WiFiUDP controlUdp;
 #define CONTROL_CMD_HIT 8
 
 uint8_t controlBuffer[32];
-
 
 void controlProcessBuffer() {
   if (controlBuffer[0] != CONTROL_PACKET_MAGIC) {
@@ -50,9 +50,15 @@ void controlProcessBuffer() {
         logValue("Control set new roboId: ", config.roboId);
         break;
       }
+    case CONTROL_CMD_SET_LIFE: {
+        if (!configIdValid()) return;
+        if (controlBuffer[2] == config.roboId || controlBuffer[2] == 0) {
+          logicSetLife(controlBuffer[3]);
+        }
+        break;
+      }
     case CONTROL_CMD_DISCOVER: {
         uint8_t buf[8];
-        memset(buf, 0, sizeof(buf));
         buf[0] = CONTROL_PACKET_MAGIC;
         buf[1] = CONTROL_CMD_DISCOVER_RESPONSE;
         buf[2] = config.roboId;
@@ -72,6 +78,32 @@ void controlProcessBuffer() {
         break;
       }
   }
+}
+
+void controlSendHit(const uint8_t enemyId, const uint8_t life) {
+  uint8_t buf[5];
+  buf[0] = CONTROL_PACKET_MAGIC;
+  buf[1] = CONTROL_CMD_HIT;
+  buf[2] = config.roboId;
+  buf[3] = enemyId;
+  buf[4] = life;
+
+  controlUdp.beginPacket(controlBroadcast, CONTROL_PORT);
+  controlUdp.write(buf, sizeof(buf));
+  controlUdp.endPacket();
+}
+
+void controlSendBrakeRequest() {
+  if (!configIdValid()) return;
+
+  uint8_t buf[3];
+  buf[0] = CONTROL_PACKET_MAGIC;
+  buf[1] = CONTROL_CMD_REMOTE_CTRL;
+  buf[2] = config.roboId - 1;
+
+  controlUdp.beginPacket(controlBroadcast, CONTROL_PORT);
+  controlUdp.write(buf, sizeof(buf));
+  controlUdp.endPacket();
 }
 
 void controlTick() {
