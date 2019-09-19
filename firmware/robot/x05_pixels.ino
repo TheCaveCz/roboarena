@@ -10,6 +10,7 @@
 #define PIXELS_ANIM_YELLOW 6
 #define PIXELS_ANIM_NORMAL 4
 #define PIXELS_ANIM_BLINK 5
+#define PIXELS_ANIM_BLINK_FAST 7
 
 uint8_t pixelsBuffer[PIXELS_BYTE_COUNT];
 uint8_t pixelsTargetR;
@@ -19,22 +20,38 @@ uint8_t pixelsTargetB;
 Ticker pixelsTicker;
 
 uint16_t pixelsProgress;
+uint8_t pixelsLife;
 uint8_t pixelsState;
 
 
-void pixelsSend(uint8_t r, uint8_t g, uint8_t b) {
-  for (int i = 0; i < PIXELS_BYTE_COUNT; i += 3) {
-    pixelsBuffer[i] = g;
-    pixelsBuffer[i + 1] = r;
-    pixelsBuffer[i + 2] = b;
-  }
+void pixelsSend(uint8_t r, uint8_t g, uint8_t b, uint8_t cnt) {
+  //  for (int i = 0; i < PIXELS_BYTE_COUNT; i += 3) {
+  //    pixelsBuffer[i] = g;
+  //    pixelsBuffer[i + 1] = r;
+  //    pixelsBuffer[i + 2] = b;
+  //  }
+
+  // zap pri cnt = 2,3
+  pixelsBuffer[0] = cnt > 1 ? g : 0;
+  pixelsBuffer[1] = cnt > 1 ? r : 0;
+  pixelsBuffer[2] = cnt > 1 ? b : 0;
+
+  // zap pri cnt = 1,3
+  pixelsBuffer[3] = (cnt & 1) ? g : 0;
+  pixelsBuffer[4] = (cnt & 1)  ? r : 0;
+  pixelsBuffer[5] = (cnt & 1)  ? b : 0;
+
+  // zap pri cnt = 2,3
+  pixelsBuffer[6] = cnt > 1 ? g : 0;
+  pixelsBuffer[7] = cnt > 1 ? r : 0;
+  pixelsBuffer[8] = cnt > 1 ? b : 0;
 
   ws2812Send(pixelsBuffer, PIXELS_BYTE_COUNT);
 }
 
 void pixelsTick() {
   if (pixelsState == PIXELS_ANIM_NORMAL) {
-    pixelsSend(pixelsTargetR, pixelsTargetG, pixelsTargetB);
+    pixelsSend(pixelsTargetR, pixelsTargetG, pixelsTargetB, pixelsLife);
     return;
   }
 
@@ -44,26 +61,33 @@ void pixelsTick() {
 
   switch (pixelsState) {
     case PIXELS_ANIM_BLUE:
-      pixelsSend(0, 0, v);
+      pixelsSend(0, 0, v, 3);
       break;
     case PIXELS_ANIM_VIOLET:
-      pixelsSend(v, 0, v);
+      pixelsSend(v, 0, v, 3);
       break;
     case PIXELS_ANIM_GREEN:
-      pixelsSend(0, v, 0);
+      pixelsSend(0, v, 0, 3);
       break;
     case PIXELS_ANIM_YELLOW:
-      pixelsSend(v, v, 0);
+      pixelsSend(v, v, 0, 3);
       break;
     case PIXELS_ANIM_BLINK:
       if ((pixelsProgress % 20) < 10) {
-        pixelsSend(pixelsTargetR, pixelsTargetG, pixelsTargetB);
+        pixelsSend(pixelsTargetR, pixelsTargetG, pixelsTargetB, pixelsLife);
       } else {
-        pixelsSend(0, 0, 0);
+        pixelsSend(0, 0, 0, 0);
+      }
+      break;
+    case PIXELS_ANIM_BLINK_FAST:
+      if ((pixelsProgress % 4) < 2) {
+        pixelsSend(pixelsTargetR, pixelsTargetG, pixelsTargetB, pixelsLife);
+      } else {
+        pixelsSend(0, 0, 0, 0);
       }
       break;
     default:
-      pixelsSend(v, 0, 0);
+      pixelsSend(v, 0, 0, 3);
       break;
   }
 
@@ -77,9 +101,10 @@ void pixelsSetColor(uint8_t r, uint8_t g, uint8_t b) {
   pixelsTargetB = b;
 }
 
-void pixelsSetAnimState(uint8_t v) {
+void pixelsSetAnimState(uint8_t v, uint8_t life) {
   logValue("Pixels anim state set to ", v);
   pixelsState = v;
+  pixelsLife = life;
   pixelsProgress = 0;
 }
 

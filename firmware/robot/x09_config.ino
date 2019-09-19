@@ -16,10 +16,20 @@ bool configIdValid() {
 
 uint32_t configColorForId() {
   switch (config.roboId) {
-    case 1: return 0x600000;
-    case 2: return 0x000060;
-    case 3: return 0xc04000;
-    case 4: return 0x006000;
+    case 1: return 0xf00000;
+    case 2: return 0x0000f0;
+    case 3: return 0xf06000;
+    case 4: return 0x00f000;
+    default: return 0;
+  }
+}
+
+uint8_t configIdForChip(const uint32_t chip) {
+  switch (chip) {
+    case 0x00A50764UL: return 1;
+    case 0x00A4E988UL: return 3;
+    case 0x00A5146CUL: return 4;
+    case 0x00A4BAA6UL: return 2;
     default: return 0;
   }
 }
