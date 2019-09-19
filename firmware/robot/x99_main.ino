@@ -1,11 +1,12 @@
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
   logInfo("Roboarena!!!");
 
   pixelsSetup();
   configSetup();
   motorsSetup();
+  readerSetup();
   logicSetup();
   otaSetup();
   wifiSetup();
