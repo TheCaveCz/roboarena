@@ -10,6 +10,8 @@ IPAddress controlBroadcast(255, 255, 255, 255);
 #define CONTROL_CMD_DISCOVER 4
 #define CONTROL_CMD_DISCOVER_RESPONSE 5
 #define CONTROL_CMD_REMOTE_CTRL 6
+#define CONTROL_CMD_SET_LIFE 7
+#define CONTROL_CMD_HIT 8
 
 uint8_t controlBuffer[32];
 

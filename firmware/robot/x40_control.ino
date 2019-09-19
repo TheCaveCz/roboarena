@@ -1,6 +1,7 @@
 Task controlTask(20, TASK_FOREVER, &controlTick, &scheduler, false);
 WiFiUDP controlUdp;
 
+#define CONTROL_PORT 44123
 #define CONTROL_PACKET_MAGIC 0x62
 #define CONTROL_CMD_MOVE 1
 #define CONTROL_CMD_ID 2
@@ -8,6 +9,8 @@ WiFiUDP controlUdp;
 #define CONTROL_CMD_DISCOVER 4
 #define CONTROL_CMD_DISCOVER_RESPONSE 5
 #define CONTROL_CMD_REMOTE_CTRL 6
+#define CONTROL_CMD_SET_LIFE 7
+#define CONTROL_CMD_HIT 8
 
 uint8_t controlBuffer[32];
 
