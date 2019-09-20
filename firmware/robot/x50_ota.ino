@@ -3,6 +3,8 @@ uint8_t otaProgress;
 void otaSetup() {
   String ssid = HOSTNAME_PREFIX;
   ssid += chipId;
+  ssid += '-';
+  ssid += config.roboId;
   ArduinoOTA.setHostname(ssid.c_str());
 
 #ifdef OTA_PASSWORD
