@@ -12,7 +12,7 @@ void otaSetup() {
   ArduinoOTA.onStart([]() {
     logInfo("OTA starting");
     logicSetBrake(1);
-    pixelsSetAnimState(PIXELS_ANIM_GREEN, 3);
+    pixelsSetAnimState(PIXELS_ANIM_GREEN, 0);
   });
   ArduinoOTA.onEnd([]() {
     logInfo("OTA finished");

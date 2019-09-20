@@ -11,6 +11,7 @@
 #define PIXELS_ANIM_NORMAL 4
 #define PIXELS_ANIM_BLINK 5
 #define PIXELS_ANIM_BLINK_FAST 7
+#define PIXELS_ANIM_BLINK_SPLIT 8
 
 uint8_t pixelsBuffer[PIXELS_BYTE_COUNT];
 uint8_t pixelsTargetR;
@@ -25,27 +26,65 @@ uint8_t pixelsState;
 
 
 void pixelsSend(uint8_t r, uint8_t g, uint8_t b, uint8_t cnt) {
-  //  for (int i = 0; i < PIXELS_BYTE_COUNT; i += 3) {
-  //    pixelsBuffer[i] = g;
-  //    pixelsBuffer[i + 1] = r;
-  //    pixelsBuffer[i + 2] = b;
-  //  }
+  if (cnt == PIXELS_COUNT) {
+    for (int i = 0; i < PIXELS_BYTE_COUNT; i += 3) {
+      pixelsBuffer[i] = g;
+      pixelsBuffer[i + 1] = r;
+      pixelsBuffer[i + 2] = b;
+    }
+  } else if (cnt == 255) {
+    memset(pixelsBuffer, 0, sizeof(pixelsBuffer));
+    for (int i = 0; i < PIXELS_BYTE_COUNT / 2; i += 3) {
+      pixelsBuffer[i] = g;
+      pixelsBuffer[i + 1] = r;
+      pixelsBuffer[i + 2] = b;
+    }
+  } else if (cnt == 254) {
+    memset(pixelsBuffer, 0, sizeof(pixelsBuffer));
+    for (int i = PIXELS_BYTE_COUNT / 2; i < PIXELS_BYTE_COUNT; i += 3) {
+      pixelsBuffer[i] = g;
+      pixelsBuffer[i + 1] = r;
+      pixelsBuffer[i + 2] = b;
+    }
+  } else {
+    memset(pixelsBuffer, 0, sizeof(pixelsBuffer));
 
-  // zap pri cnt = 2,3
-  pixelsBuffer[0] = cnt > 1 ? g : 0;
-  pixelsBuffer[1] = cnt > 1 ? r : 0;
-  pixelsBuffer[2] = cnt > 1 ? b : 0;
+    ///
+    // 012 345 678 9ab cde f,x10,x11
+    //  0   1   2   3   4   5
+    //  3   3   3   3   3   3
+    //      2   2   2   2
+    //          1   1
+    if (cnt >= 3) {
+      pixelsBuffer[0] = g;
+      pixelsBuffer[1] = r;
+      pixelsBuffer[2] = b;
 
-  // zap pri cnt = 1,3
-  pixelsBuffer[3] = (cnt & 1) ? g : 0;
-  pixelsBuffer[4] = (cnt & 1)  ? r : 0;
-  pixelsBuffer[5] = (cnt & 1)  ? b : 0;
+      pixelsBuffer[15] = g;
+      pixelsBuffer[16] = r;
+      pixelsBuffer[17] = b;
+    }
 
-  // zap pri cnt = 2,3
-  pixelsBuffer[6] = cnt > 1 ? g : 0;
-  pixelsBuffer[7] = cnt > 1 ? r : 0;
-  pixelsBuffer[8] = cnt > 1 ? b : 0;
+    if (cnt >= 2) {
+      pixelsBuffer[3] = g;
+      pixelsBuffer[4] = r;
+      pixelsBuffer[5] = b;
 
+      pixelsBuffer[12] = g;
+      pixelsBuffer[13] = r;
+      pixelsBuffer[14] = b;
+    }
+
+    if (cnt >= 1) {
+      pixelsBuffer[6] = g;
+      pixelsBuffer[7] = r;
+      pixelsBuffer[8] = b;
+
+      pixelsBuffer[9] = g;
+      pixelsBuffer[10] = r;
+      pixelsBuffer[11] = b;
+    }
+  }
   ws2812Send(pixelsBuffer, PIXELS_BYTE_COUNT);
 }
 
@@ -61,16 +100,16 @@ void pixelsTick() {
 
   switch (pixelsState) {
     case PIXELS_ANIM_BLUE:
-      pixelsSend(0, 0, v, 3);
+      pixelsSend(0, 0, v, PIXELS_COUNT);
       break;
     case PIXELS_ANIM_VIOLET:
-      pixelsSend(v, 0, v, 3);
+      pixelsSend(v, 0, v, PIXELS_COUNT);
       break;
     case PIXELS_ANIM_GREEN:
-      pixelsSend(0, v, 0, 3);
+      pixelsSend(0, v, 0, PIXELS_COUNT);
       break;
     case PIXELS_ANIM_YELLOW:
-      pixelsSend(v, v, 0, 3);
+      pixelsSend(v, v, 0, PIXELS_COUNT);
       break;
     case PIXELS_ANIM_BLINK:
       if ((pixelsProgress % 20) < 10) {
@@ -79,6 +118,10 @@ void pixelsTick() {
         pixelsSend(0, 0, 0, 0);
       }
       break;
+    case PIXELS_ANIM_BLINK_SPLIT:
+      pixelsSend(pixelsTargetR, pixelsTargetG, pixelsTargetB, (pixelsProgress % 20) < 10 ? 255 : 254);
+      break;
+
     case PIXELS_ANIM_BLINK_FAST:
       if ((pixelsProgress % 4) < 2) {
         pixelsSend(pixelsTargetR, pixelsTargetG, pixelsTargetB, pixelsLife);
@@ -87,7 +130,7 @@ void pixelsTick() {
       }
       break;
     default:
-      pixelsSend(v, 0, 0, 3);
+      pixelsSend(v, 0, 0, PIXELS_COUNT);
       break;
   }
 

@@ -18,7 +18,7 @@
 
 #define LOG_ENABLED 1
 #define HOSTNAME_PREFIX "tc-robot-"
-#define PIXELS_COUNT 3
+#define PIXELS_COUNT 6
 
 #define FW_VERSION 2
 
