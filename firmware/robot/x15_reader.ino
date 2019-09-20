@@ -5,13 +5,21 @@ Task taskReader(5, TASK_FOREVER, &readerMsgStartCb, &scheduler, true);
 #define READER_ERROR_INVALID_DATA 2
 #define READER_ERROR_CHECKSUM 3
 
+#define READER_BINARY_CHECKSUM 1
+
+#if READER_BINARY_CHECKSUM
+#define READER_MSG_LEN 13
+#else
+#define READER_MSG_LEN 14
+#endif
+
 void readerChipEvent(const uint32_t chip);
 
 void readerSetup() {
 }
 
 void readerMsgStartCb() {
-  if (Serial.available() < 14) {
+  if (Serial.available() < READER_MSG_LEN) {
     return;
   }
 
@@ -27,9 +35,9 @@ void readerMsgStartCb() {
         readerChipEvent(code);
       }
     }
-//    else {
-//      logValue("Reader error: ", error);
-//    }
+    //    else {
+    //      logValue("Reader error: ", error);
+    //    }
     break;
   }
 }
@@ -53,7 +61,7 @@ bool readerGetByte(uint8_t &c) {
 }
 
 uint8_t readerParseMessage(uint32_t& message) {
-  if (Serial.available() < 13)
+  if (Serial.available() < READER_MSG_LEN - 1)
     return READER_ERROR_TOO_SHORT;
 
   uint8_t c = 0;
@@ -70,8 +78,12 @@ uint8_t readerParseMessage(uint32_t& message) {
     checksum ^= c;
   }
 
+#if READER_BINARY_CHECKSUM
+  c = Serial.read();
+#else
   if (!readerGetByte(c)) // read last two chars - checksum
     return READER_ERROR_INVALID_DATA;
+#endif
 
   if (c != checksum) return READER_ERROR_CHECKSUM;
 
