@@ -2,35 +2,11 @@ OneButton logicResetButton(D8, false, false);
 
 uint8_t logicBrake;
 uint8_t logicLife;
-
-Task logicChipTimeoutTask(500, 1, &logicChipTimeoutCb, &scheduler, false);
-Task logicInvulnTask(3000, 1, &logicInvulnCb, &scheduler, false);
-
-uint32_t logicLastChip;
-uint8_t logicChipReadCount;
 uint8_t logicInvuln;
 
-
-void logicChipTimeoutCb() {
-  //logInfo("Chip timeout cb");
-  logicLastChip = 0;
-  logicChipReadCount = 0;
-}
+Task logicInvulnTask(3000, 1, &logicInvulnCb, &scheduler, false);
 
 void readerChipEvent(const uint32_t chip) {
-  if (logicLastChip != chip) {
-    logicLastChip = chip;
-    logicChipReadCount = 0;
-  }
-  logicChipReadCount++;
-  //logValue("Chip read count: ", logicChipReadCount);
-  if (logicChipReadCount < 3) {
-    logicChipTimeoutTask.restartDelayed(0);
-    return;
-  }
-
-  logicChipReadCount = 0;
-  logicChipTimeoutTask.disable();
   uint8_t enemyId = configIdForChip(chip);
   if (enemyId) {
     logicTakeHit(enemyId);
