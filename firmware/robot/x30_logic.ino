@@ -109,9 +109,9 @@ void logicSetBrake(uint8_t brake) {
 
 void logicUpdateAnimState() {
   if (logicResetButton.isLongPressed()) {
-    pixelsSetAnimState(PIXELS_ANIM_YELLOW, 3);
+    pixelsSetAnimState(PIXELS_ANIM_YELLOW, 0);
   } else if (logicBrake) {
-    pixelsSetAnimState(PIXELS_ANIM_BLINK, logicLife ? : 3);
+    pixelsSetAnimState(logicLife ? PIXELS_ANIM_BLINK : PIXELS_ANIM_BLINK_SPLIT, logicLife);
   } else if (logicInvuln) {
     pixelsSetAnimState(PIXELS_ANIM_BLINK_FAST, logicLife);
   } else {
@@ -125,7 +125,7 @@ void logicUpdateRoboId() {
     pixelsSetColor(c >> 16, (c >> 8) & 0xff, c & 0xff);
     logicUpdateAnimState();
   } else {
-    pixelsSetAnimState(PIXELS_ANIM_RED, 3);
+    pixelsSetAnimState(PIXELS_ANIM_RED, 0);
   }
 }
 
