@@ -10,8 +10,11 @@ uint8_t m2targetSpeed;
 //#define PWM_1_MIN (config.m1maxPwm/4)
 //#define PWM_2_MIN (config.m2maxPwm/4)
 
-#define PWM_1_MIN (config.m1maxPwm/8)
-#define PWM_2_MIN (config.m2maxPwm/8)
+//#define PWM_1_MIN (config.m1maxPwm/8)
+//#define PWM_2_MIN (config.m2maxPwm/8)
+
+#define PWM_1_MIN 256
+#define PWM_2_MIN 256
 
 #define PWM_1_MAX (config.m1maxPwm)
 #define PWM_2_MAX (config.m2maxPwm)
