@@ -50,6 +50,18 @@ void controlTick() {
   btnCodeToSend = 255;
 }
 
+void controlSendSetLife(uint8_t roboId) {
+  uint8_t buf[4];
+  buf[0] = CONTROL_PACKET_MAGIC;
+  buf[1] = CONTROL_CMD_SET_LIFE;
+  buf[2] = roboId;
+  buf[3] = 3;
+
+  controlUdp.beginPacket(controlBroadcast, CONTROL_PORT);
+  controlUdp.write(buf, sizeof(buf));
+  controlUdp.endPacket();
+}
+
 void controlSetup() {
   controlUdp.begin(CONTROL_PORT);
   controlTask.enable();

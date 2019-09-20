@@ -3,7 +3,10 @@ Task btnTask(50, TASK_FOREVER, &btnTick, &scheduler, true);
 uint8_t btnBrakeMask;
 uint8_t btnConnectFlag;
 uint8_t btnLast;
+uint8_t btnHoldCounter;
 uint8_t btnCodeToSend;
+
+#define BTN_TRESHOLD 20
 
 void btnUpdateLed(const uint8_t i) {
   if (btnConnectFlag) {
@@ -42,12 +45,8 @@ uint8_t btnFromAnalog(const int analog) {
   }
 }
 
-void btnTick() {
-  uint8_t btn = btnFromAnalog(analogRead(A0));
-  if (btn == btnLast) return;
-  btnLast = btn;
-  if (btn == 0) return;
-
+void btnShortPress(uint8_t btn) {
+  logValue("Short press: ", btn);
   btn--;
   switch (btn) {
     case 4:
@@ -60,14 +59,66 @@ void btnTick() {
       btnCodeToSend = btn + ((btnBrakeMask & (1 << btn)) ? 5 : 0);
       break;
   }
+}
 
-  
+void btnLongPressStart(uint8_t btn) {
+  logValue("Long start: ", btn);
+
+  switch (btn) {
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+      controlSendSetLife(btn); // specific robot
+      break;
+    case 5:
+      controlSendSetLife(0); // everyone
+      break;
+    case 6:
+      if (millis() <= 10000) {
+        btnConnectFlag = true;
+        wifiResetAndRestart();
+      }
+      break;
+  }
+}
+
+void btnLongPressEnd(uint8_t btn) {
+  logValue("Long end: ", btn);
+}
+
+void btnTick() {
+  uint8_t btn = btnFromAnalog(analogRead(A0));
+  if (btn == 0) {
+    if (btnLast) {
+      if (btnHoldCounter < BTN_TRESHOLD) {
+        btnShortPress(btnLast);
+      } else {
+        btnLongPressEnd(btnLast);
+      }
+    }
+    btnLast = 0;
+    btnHoldCounter = 0;
+    return;
+  }
+
+  if (btn == btnLast) {
+    if (btnHoldCounter < BTN_TRESHOLD) {
+      btnHoldCounter++;
+    } else if (btnHoldCounter != 255) {
+      btnLongPressStart(btnLast);
+      btnHoldCounter = 255;
+    }
+    return;
+  }
+  btnLast = btn;
 }
 
 void btnSetup() {
   btnBrakeMask = 0;
   btnConnectFlag = 0;
   btnLast = 0;
+  btnHoldCounter = 0;
   btnCodeToSend = 255;
   btnUpdateLeds();
 }
