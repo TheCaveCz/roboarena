@@ -1,5 +1,8 @@
+#define DEADZONE 30
+
 Task parserTask(5, TASK_FOREVER, &parserMsgStartCb, &scheduler, true);
 
+uint8_t parserSpeedsRaw[8];
 uint8_t parserSpeeds[8];
 uint8_t parserBrakeMask;
 
@@ -25,7 +28,8 @@ void parserDump() {
 }
 
 void parserSetup() {
-  memset(parserSpeeds, 128, sizeof(parserSpeeds));
+  memset(parserSpeedsRaw, 128, sizeof(parserSpeedsRaw));
+  parserNormalizeSpeeds();
   parserBrakeMask = 0;
 }
 
@@ -98,7 +102,8 @@ void parserMsgReadCb() {
   //  logRaw(brakeMask);
   //  logLine();
 
-  memcpy(parserSpeeds, speeds, sizeof(parserSpeeds));
+  memcpy(parserSpeedsRaw, speeds, sizeof(parserSpeedsRaw));
+  parserNormalizeSpeeds();
   parserBrakeMask = brakeMask;
 
 
@@ -109,4 +114,20 @@ void parserMsgReadCb() {
   }
 
   parserTask.setCallback(&parserMsgStartCb);
+}
+
+uint8_t parserNormalize(const uint8_t in) {
+  if (in <= 128 - DEADZONE) {
+    return map(in, 0, 128 - DEADZONE, 0, 127);
+  } else if (in >= 128 + DEADZONE) {
+    return map(in, 128 + DEADZONE, 255, 129, 255);
+  } else {
+    return 128;
+  }
+}
+
+void parserNormalizeSpeeds() {
+  for (uint8_t i = 0; i < 8; i++) {
+    parserSpeeds[i] = parserNormalize(parserSpeedsRaw[i]);
+  }
 }
