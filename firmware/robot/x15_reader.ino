@@ -28,7 +28,6 @@ void readerMsgStartCb() {
 
   // discard all received data until we find sequence start marker
   while (readerSerial.available()) {
-    Serial.write(readerSerial.peek());
     if (readerSerial.read() != 2) continue;
 
     uint32_t code = 0;
