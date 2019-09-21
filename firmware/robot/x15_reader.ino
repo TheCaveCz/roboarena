@@ -5,6 +5,8 @@ Task taskReader(5, TASK_FOREVER, &readerMsgStartCb, &scheduler, true);
 #define READER_ERROR_INVALID_DATA 2
 #define READER_ERROR_CHECKSUM 3
 
+SoftwareSerial readerSerial(PIN_READER, -1);
+
 #define READER_BINARY_CHECKSUM 1
 
 #if READER_BINARY_CHECKSUM
@@ -16,16 +18,18 @@ Task taskReader(5, TASK_FOREVER, &readerMsgStartCb, &scheduler, true);
 void readerChipEvent(const uint32_t chip);
 
 void readerSetup() {
+  readerSerial.begin(9600);
 }
 
 void readerMsgStartCb() {
-  if (Serial.available() < READER_MSG_LEN) {
+  if (readerSerial.available() < READER_MSG_LEN) {
     return;
   }
 
   // discard all received data until we find sequence start marker
-  while (Serial.available()) {
-    if (Serial.read() != 2) continue;
+  while (readerSerial.available()) {
+    Serial.write(readerSerial.peek());
+    if (readerSerial.read() != 2) continue;
 
     uint32_t code = 0;
     uint8_t error = readerParseMessage(code);
@@ -52,8 +56,8 @@ uint8_t readerConvertHex(uint8_t c) {
 }
 
 bool readerGetByte(uint8_t &c) {
-  uint8_t c1 = readerConvertHex(Serial.read());
-  uint8_t c2 = readerConvertHex(Serial.read());
+  uint8_t c1 = readerConvertHex(readerSerial.read());
+  uint8_t c2 = readerConvertHex(readerSerial.read());
   if (c1 == 255 || c2 == 255) return false;
 
   c = (c1 << 4) | c2;
@@ -61,7 +65,7 @@ bool readerGetByte(uint8_t &c) {
 }
 
 uint8_t readerParseMessage(uint32_t& message) {
-  if (Serial.available() < READER_MSG_LEN - 1)
+  if (readerSerial.available() < READER_MSG_LEN - 1)
     return READER_ERROR_TOO_SHORT;
 
   uint8_t c = 0;
@@ -79,7 +83,7 @@ uint8_t readerParseMessage(uint32_t& message) {
   }
 
 #if READER_BINARY_CHECKSUM
-  c = Serial.read();
+  c = readerSerial.read();
 #else
   if (!readerGetByte(c)) // read last two chars - checksum
     return READER_ERROR_INVALID_DATA;
@@ -87,7 +91,7 @@ uint8_t readerParseMessage(uint32_t& message) {
 
   if (c != checksum) return READER_ERROR_CHECKSUM;
 
-  if (Serial.read() != 3) return READER_ERROR_INVALID_DATA;
+  if (readerSerial.read() != 3) return READER_ERROR_INVALID_DATA;
 
   message = data;
   return 0;
