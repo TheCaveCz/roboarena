@@ -35,7 +35,7 @@ module spodek() {
         translate([ox/2,oy/2,0]) difference() {
             union() {
                 roztec(hx,hy) cylinder(d=6,h=3);
-                krabicka(bx,by,1.2+3+1.6+11.5,3);
+                krabicka(bx,by,1.2+3+1.6+11.6,3);
                 cubexy(bx+xd,xd,1.2,-1.2);
                 translate([(bx+xd)/2,0,-1.2]) cylinder(d=xd,h=1.2);
                 translate([-(bx+xd)/2,0,-1.2]) cylinder(d=xd,h=1.2);
@@ -45,7 +45,7 @@ module spodek() {
             translate([(bx+xd)/2,0,-3]) #cylinder(d=5,h=10);
             translate([-(bx+xd)/2,0,-3]) #cylinder(d=5,h=10);
         }
-        translate([6.85,55,3+1.6]) #cube([46,10,11.5]);
+        translate([6.85,55,3+1.6]) #cube([46,10,11.6]);
     }
 }
 
