@@ -59,7 +59,7 @@ module vrch() {
             translate([ox/2,oy/2,0]) difference() {
                 union() {
                     rotate([0,180,0]) krabicka(bx,by,11.7,3);
-                    roztec(hx,hy,-22) cubexy(6,6,22);
+                    roztec(hx,hy,-22) cubexy(5.9,5.4,22);
                     translate([0,-(by-30)/2,0]) cubexy(bx,30,1,-1);
                 }
                 roztec(hx,hy,-23) cylinder(d=2.3,h=15);
