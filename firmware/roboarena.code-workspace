@@ -1,0 +1,15 @@
+{
+	"folders": [
+		{
+			"path": "controller-new-atmega"
+		},
+		{
+			"name": "controller-new-esp",
+			"path": "controller-new-esp"
+		},
+		{
+			"path": "sharedLibs/RoboProtocol"
+		}
+	],
+	"settings": {}
+}
