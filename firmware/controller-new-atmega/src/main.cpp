@@ -57,6 +57,20 @@ void btnClick(void *param) {
   controlStream.write('\n');
 }
 
+void btnLongStart(void *param) {
+  int id = (int)param;
+  controlStream.write('Y');
+  controlStream.write(id + '0');
+  controlStream.write('\n');
+}
+
+void btnLongStop(void *param) {
+  int id = (int)param;
+  controlStream.write('y');
+  controlStream.write(id + '0');
+  controlStream.write('\n');
+}
+
 void setup() {
   Serial.begin(115200);
   Serial.println();
@@ -80,6 +94,27 @@ void setup() {
   btn5.attachClick(btnClick, (void *)5);
   btn6.attachClick(btnClick, (void *)6);
 
+  btn1.setPressTicks(3000);
+  btn2.setPressTicks(3000);
+  btn3.setPressTicks(3000);
+  btn4.setPressTicks(3000);
+  btn5.setPressTicks(3000);
+  btn6.setPressTicks(3000);
+
+  btn1.attachLongPressStart(btnLongStart, (void *)1);
+  btn2.attachLongPressStart(btnLongStart, (void *)2);
+  btn3.attachLongPressStart(btnLongStart, (void *)3);
+  btn4.attachLongPressStart(btnLongStart, (void *)4);
+  btn5.attachLongPressStart(btnLongStart, (void *)5);
+  btn6.attachLongPressStart(btnLongStart, (void *)6);
+
+  btn1.attachLongPressStop(btnLongStop, (void *)1);
+  btn2.attachLongPressStop(btnLongStop, (void *)2);
+  btn3.attachLongPressStop(btnLongStop, (void *)3);
+  btn4.attachLongPressStop(btnLongStop, (void *)4);
+  btn5.attachLongPressStop(btnLongStop, (void *)5);
+  btn6.attachLongPressStop(btnLongStop, (void *)6);
+
   adcCalibrate();
   adcTask.enable();
 }
@@ -91,7 +126,7 @@ void loop() {
   btn4.tick();
   btn5.tick();
   btn6.tick();
-  
+
   scheduler.execute();
 
   while (controlStream.available()) {

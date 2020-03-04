@@ -9,7 +9,17 @@ uint8_t controlPos[8];
 uint8_t controlBrakeMask;
 ControlButtonCallback buttonCallback;
 
-void adcCb() { adcVbat = analogRead(A0) * 4150 / 1024; }
+void adcCb() {
+  adcVbat = analogRead(A0) *
+#if LOGIC_REMOTE
+            4230
+#elif LOGIC_CONTROLLER
+            4150
+#else
+            4300
+#endif
+            / 1024;
+}
 Task adcTask(1000, TASK_FOREVER, &adcCb);
 
 void cmdCb() { cmd.check(); }
@@ -24,7 +34,7 @@ COMMAND(cmdButton) {
   }
 
   if (buttonCallback) {
-    buttonCallback(id);
+    buttonCallback(id, buf[0] == 'X' ? EventPress : (buf[0] == 'Y' ? EventLongStart : EventLongStop));
   }
 }
 
@@ -37,6 +47,8 @@ COMMAND(cmdControls) {
 
 const Command commands[] = {
     {'X', 2, cmdButton},    //
+    {'Y', 2, cmdButton},    //
+    {'y', 2, cmdButton},    //
     {'Z', 17, cmdControls}, //
     {0, 0, NULL}            //
 };
@@ -48,7 +60,7 @@ void controlSetBrakeMask(uint8_t bm) { controlBrakeMask = bm & 0xf; }
 
 void controlSetup(Stream *serial, Scheduler *scheduler, ControlButtonCallback bcb) {
   buttonCallback = bcb;
-  controlBrakeMask = 0;//0b1110;
+  controlBrakeMask = 0; // 0b1110;
   memset(controlPos, 0, sizeof(controlPos));
   cmd.begin(commands, serial);
 

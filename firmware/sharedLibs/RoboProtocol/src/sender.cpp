@@ -8,7 +8,13 @@ IPAddress senderBroadcast(255, 255, 255, 255);
 SenderRecvCallback recvCallback;
 SenderSendCallback sendCallback;
 
-void controlTick() {
+void senderSendNow(const void *buffer, size_t len) {
+  senderUdp.beginPacket(senderBroadcast, PROTOCOL_PORT);
+  senderUdp.write((uint8_t*)buffer, len);
+  senderUdp.endPacket();
+}
+
+void senderTick() {
   size_t len;
   uint8_t senderBuffer[32];
 
@@ -27,9 +33,7 @@ void controlTick() {
       memset(senderBuffer, 0, sizeof(senderBuffer));
       len = sendCallback(id++, senderBuffer);
       if (len) {
-        senderUdp.beginPacket(senderBroadcast, PROTOCOL_PORT);
-        senderUdp.write(senderBuffer, len);
-        senderUdp.endPacket();
+        senderSendNow(senderBuffer, len);
       } else {
         break;
       }
@@ -37,7 +41,7 @@ void controlTick() {
   }
 }
 
-Task senderTask(50, TASK_FOREVER, &controlTick);
+Task senderTask(50, TASK_FOREVER, &senderTick);
 
 void senderSetup(Scheduler *scheduler, SenderRecvCallback _rcb, SenderSendCallback _scb) {
   sendCallback = _scb;

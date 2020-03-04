@@ -19,6 +19,10 @@ ProtocolCmd protocolCheck(void *buffer, size_t len) {
   switch (buf[1]) {
     case ProtocolCmdMove:
       return len == sizeof(ProtocolMsgMove) ? ProtocolCmdMove : ProtocolCmdInvalid;
+    case ProtocolCmdVbat:
+      return len == sizeof(ProtocolMsgVbat) ? ProtocolCmdVbat : ProtocolCmdInvalid;
+    case ProtocolCmdRemoteCtrl:
+      return len == sizeof(ProtocolMsgRemoteCtrl) ? ProtocolCmdRemoteCtrl : ProtocolCmdInvalid;
     default:
       return ProtocolCmdInvalid;
   }

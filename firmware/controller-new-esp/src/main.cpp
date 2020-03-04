@@ -3,11 +3,13 @@
 #include <ArduinoOTA.h>
 #include <Ticker.h>
 #include <log.h>
+#include <ESP8266WebServer.h>
 #include "wifi.h"
 #include "control.h"
 #include <sender.h>
 #include "anim.h"
 #include "logic.h"
+#include "disp.h"
 
 #if LOGIC_CONTROLLER
 #define HOSTNAME_PREFIX "tc-roboctrl-"
@@ -19,6 +21,25 @@
 
 String ssid;
 Scheduler scheduler;
+ESP8266WebServer server;
+
+void serverHandleRoot() {
+  String response = "vbat=";
+  response += controlGetVbat();
+#if LOGIC_CONTROLLER
+  response += "\ntype=controller";
+#elif LOGIC_REMOTE
+  response += "\ntype=remote";
+#else
+#error unknown
+#endif
+  response += "\nuptime=";
+  response += millis();
+  response += "\nid=";
+  response += ssid;
+
+  server.send(200, "text/plain", response);
+}
 
 void setup() {
   ssid = HOSTNAME_PREFIX;
@@ -35,6 +56,9 @@ void setup() {
   animSetup();
   wifiSetup(ssid);
 
+  server.on("/", serverHandleRoot);
+  server.begin();
+
   ArduinoOTA.setHostname(ssid.c_str());
 #ifdef OTA_PASSWORD
   ArduinoOTA.setPassword(OTA_PASSWORD);
@@ -43,6 +67,9 @@ void setup() {
   ArduinoOTA.begin();
 
   senderSetup(&scheduler, senderReceive, senderSend);
+
+  logicSetup(&scheduler);
+  dispSetup(&scheduler);
 }
 
 void reportingCb() {
@@ -58,6 +85,7 @@ Task reportingTask(5000, TASK_FOREVER, &reportingCb, &scheduler);
 
 void loop() {
   ArduinoOTA.handle();
+  server.handleClient();
   scheduler.execute();
 
   if (wifiHasIp()) {
