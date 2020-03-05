@@ -1,0 +1,14 @@
+﻿---
+BasedOnStyle: LLVM
+AlignAfterOpenBracket: DontAlign
+AllowAllParametersOfDeclarationOnNextLine: false
+BinPackParameters: false
+MaxEmptyLinesToKeep: 2
+BreakConstructorInitializers: BeforeComma
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+SortIncludes: false
+IndentCaseLabels: true
+AlwaysBreakAfterReturnType: None
+PenaltyReturnTypeOnItsOwnLine: 9999
+ColumnLimit: 120
+...

@@ -9,6 +9,10 @@
 		},
 		{
 			"path": "sharedLibs/RoboProtocol"
+		},
+		{
+			"name": "robot-esp32",
+			"path": "robot-esp32"
 		}
 	],
 	"settings": {}
