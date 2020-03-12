@@ -19,10 +19,16 @@ ProtocolCmd protocolCheck(void *buffer, size_t len) {
   switch (buf[1]) {
     case ProtocolCmdMove:
       return len == sizeof(ProtocolMsgMove) ? ProtocolCmdMove : ProtocolCmdInvalid;
-    case ProtocolCmdVbat:
-      return len == sizeof(ProtocolMsgVbat) ? ProtocolCmdVbat : ProtocolCmdInvalid;
+    case ProtocolCmdSetId:
+      return len == sizeof(ProtocolMsgSetId) ? ProtocolCmdSetId : ProtocolCmdInvalid;
     case ProtocolCmdRemoteCtrl:
       return len == sizeof(ProtocolMsgRemoteCtrl) ? ProtocolCmdRemoteCtrl : ProtocolCmdInvalid;
+    case ProtocolCmdDiscoverRequest:
+      return len == sizeof(ProtocolCmdHeader) ? ProtocolCmdDiscoverRequest : ProtocolCmdInvalid;
+    case ProtocolCmdDiscoverResponse:
+      return len == sizeof(ProtocolMsgDiscoverResponse) ? ProtocolCmdDiscoverResponse : ProtocolCmdInvalid;
+    case ProtocolCmdVbat:
+      return len == sizeof(ProtocolMsgVbat) ? ProtocolCmdVbat : ProtocolCmdInvalid;
     default:
       return ProtocolCmdInvalid;
   }

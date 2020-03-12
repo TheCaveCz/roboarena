@@ -8,11 +8,17 @@ IPAddress senderBroadcast(255, 255, 255, 255);
 SenderRecvCallback recvCallback;
 SenderSendCallback sendCallback;
 
-void senderSendNow(const void *buffer, size_t len) {
-  senderUdp.beginPacket(senderBroadcast, PROTOCOL_PORT);
-  senderUdp.write((uint8_t*)buffer, len);
+void senderSendNow(const void *buffer, size_t len, IPAddress addr, uint16_t port) {
+  senderUdp.beginPacket(addr, port);
+  senderUdp.write((uint8_t *)buffer, len);
   senderUdp.endPacket();
 }
+
+void senderSendNow(const void *buffer, size_t len) { senderSendNow(buffer, len, senderBroadcast, PROTOCOL_PORT); }
+
+uint16_t senderGetPort() { return senderUdp.remotePort(); }
+
+IPAddress senderGetIp() { return senderUdp.remoteIP(); }
 
 void senderTick() {
   size_t len;

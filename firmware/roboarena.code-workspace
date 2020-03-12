@@ -8,12 +8,15 @@
 			"path": "controller-new-esp"
 		},
 		{
-			"path": "sharedLibs/RoboProtocol"
-		},
-		{
 			"name": "robot-esp32",
 			"path": "robot-esp32"
 		}
 	],
-	"settings": {}
+	"settings": {
+		"files.associations": {
+			"ostream": "cpp",
+			"*.tcc": "cpp",
+			"cmath": "cpp"
+		}
+	}
 }
