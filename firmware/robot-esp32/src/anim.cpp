@@ -62,10 +62,10 @@ void animSetup(Scheduler *scheduler) {
   highlight = 0;
 
   strip.Begin();
-  strip.Show();
-
+  
   scheduler->addTask(animTask);
   animSetMode(AnimModeNormal);
+  strip.Show();
 }
 
 void animSetMode(AnimMode m) {

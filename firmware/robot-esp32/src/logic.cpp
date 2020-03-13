@@ -115,6 +115,9 @@ void logicSetUnitId(uint8_t newId) {
 
 void logicAccelCb() {
   float a = accelGet();
+  if (a > 0.6 && !player->isPlaying()) {
+    player->play("/hit-1.mp3");
+  }
   animSetHighlight(a);
 }
 Task logicAccelTask(25, TASK_FOREVER, &logicAccelCb);

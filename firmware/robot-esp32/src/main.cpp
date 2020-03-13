@@ -21,6 +21,8 @@ MP3Player player;
 Scheduler scheduler;
 
 void setup() {
+  animSetup(&scheduler);
+
   analogReadResolution(12);
   analogSetWidth(12);
   analogSetAttenuation(ADC_0db);
@@ -47,12 +49,8 @@ void setup() {
     abort();
   }
 
-  if (!accelSetup(PIN_SDA, PIN_SCL, &scheduler)) {
-    abort();
-  }
-
-  animSetup(&scheduler);
-
+  accelSetup(PIN_SDA, PIN_SCL, &scheduler);
+  
   if (!logicSetup(&scheduler, &motors, &player)) {
     abort();
   }
@@ -118,7 +116,7 @@ void loop() {
   scheduler.execute();
   animTick();
   accelTick();
-
+/*
   if (Serial.available()) {
     String line = Serial.readStringUntil('\n');
     line.trim();
@@ -153,5 +151,5 @@ void loop() {
       line.remove(0, 1);
       logicRunVbatCalib(line.toInt() != 0);
     }
-  }
+  }*/
 }
