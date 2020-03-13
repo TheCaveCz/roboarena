@@ -8,6 +8,7 @@
 struct Config {
   uint8_t magic;
   uint8_t unitId;
+  uint16_t vbatCalib;
 };
 #define CONFIG_MAGIC 0x42
 
@@ -17,6 +18,7 @@ static MP3Player *player;
 const uint8_t deadZone = 15;
 static bool logicBrake;
 static Config config;
+static uint32_t vbat;
 
 void logicSetSpeed(uint8_t sx, uint8_t sy) {
   if (sx > (128 - deadZone) && sx < (128 + deadZone))
@@ -34,7 +36,7 @@ void logicSetSpeed(uint8_t sx, uint8_t sy) {
   motors->setSpeed(m1f, m2f);
 }
 
-void logicSetBrake(bool brake, bool sound = true) {
+void logicSetBrake(bool brake, bool sound) {
   if (brake == logicBrake)
     return;
   logValue("logic: brake = ", brake);
@@ -54,6 +56,7 @@ void logicRecv(ProtocolCmd cmd, void *buffer, size_t len) {
     uint8_t index = logicGetUnitId() - 1;
     logicSetSpeed(msg->speeds[index * 2], msg->speeds[index * 2 + 1]);
     logicSetBrake(msg->brakeMask & _BV(index) ? true : false);
+    motors->setMaxSpeed(msg->brakeMask & 0x80 ? 0.75 : 0.5);
 
   } else if (cmd == ProtocolCmdDiscoverRequest) {
     ProtocolMsgDiscoverResponse response;
@@ -116,6 +119,43 @@ void logicAccelCb() {
 }
 Task logicAccelTask(25, TASK_FOREVER, &logicAccelCb);
 
+
+static uint32_t calibSum = 0;
+static uint32_t calibCount = 0;
+
+void logicBatMeasureCb() {
+  static uint32_t vbatSum = 0;
+  static uint32_t vbatCount = 0;
+
+  vbatSum += analogRead(PIN_VBAT);
+  vbatCount++;
+
+  if (vbatCount >= 200) {
+    uint32_t vbatRaw = vbatSum / vbatCount;
+    calibSum += 3700 * 4095 / vbatRaw;
+    calibCount++;
+
+    vbat = vbatRaw * config.vbatCalib / 4095;
+    vbatSum = 0;
+    vbatCount = 0;
+
+    // Serial.printf("%d %d %d\n", vbatRaw, calibSum / calibCount, vbat);
+  }
+}
+Task logicBatMeasureTask(5, TASK_FOREVER, &logicBatMeasureCb);
+
+uint32_t logicGetVbat() { return vbat; }
+
+void logicRunVbatCalib(bool on) {
+  if (on) {
+    calibCount = 0;
+    calibSum = 0;
+  } else if (calibCount) {
+    config.vbatCalib = calibSum / calibCount;
+    logicSaveConfig();
+  }
+}
+
 bool logicSetup(Scheduler *scheduler, Motors *m, MP3Player *p) {
   motors = m;
   player = p;
@@ -134,6 +174,8 @@ bool logicSetup(Scheduler *scheduler, Motors *m, MP3Player *p) {
 
   scheduler->addTask(logicAccelTask);
   logicAccelTask.enable();
+  scheduler->addTask(logicBatMeasureTask);
+  logicBatMeasureTask.enable();
 
   return true;
 }

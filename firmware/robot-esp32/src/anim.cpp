@@ -27,19 +27,14 @@ RgbColor animGetRgb(float scale) {
     case AnimColorBlue:
       return neoGamma.Correct(RgbColor(0, 0, base));
     case AnimColorYellow:
-      return neoGamma.Correct(RgbColor(base, base*0.7f, 0));
+      return neoGamma.Correct(RgbColor(base, base * 0.7f, 0));
     default:
       return neoGamma.Correct(RgbColor(base, 0, base));
   }
 }
 
 void animRefreshColors() {
-  if (mode == AnimModeConnecting) {
-    strip.ClearTo(RgbColor(0, 0, 0));
-    for (uint8_t i = 0; i <= 5; i++) {
-      strip.SetPixelColor(i, animGetRgb(1 - ((float)i) / 5.0f));
-    }
-  } else {
+  if (mode != AnimModeConnecting) {
     strip.ClearTo(animGetRgb(scale));
   }
 }
@@ -70,7 +65,7 @@ void animSetup(Scheduler *scheduler) {
   strip.Show();
 
   scheduler->addTask(animTask);
-  animSetMode(AnimModeConnecting);
+  animSetMode(AnimModeNormal);
 }
 
 void animSetMode(AnimMode m) {
@@ -85,7 +80,10 @@ void animSetMode(AnimMode m) {
     case AnimModeConnecting:
       mode = m;
       scale = 1;
-      animRefreshColors();
+      strip.ClearTo(RgbColor(0, 0, 0));
+      for (uint8_t i = 0; i <= 5; i++) {
+        strip.SetPixelColor(i, animGetRgb(1 - ((float)i) / 5.0f));
+      }
       animTask.setInterval(80);
       animTask.restart();
       break;

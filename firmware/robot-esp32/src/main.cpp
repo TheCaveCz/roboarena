@@ -4,6 +4,7 @@
 #include <SPI.h>
 #include <WebServer.h>
 #include <TaskScheduler.h>
+#include <ArduinoOTA.h>
 
 #include "pinmap.h"
 #include "MP3Player.h"
@@ -28,6 +29,11 @@ void setup() {
   Serial.begin(115200);
   logInfo("Robot!");
 
+  uint8_t mac[6];
+  esp_efuse_mac_get_default(mac);
+  uint32_t chipIdInt = mac[3] << 16 | mac[4] << 8 | mac[5];
+  logValueEx("chipId: ", chipIdInt, HEX);
+
   if (!SPIFFS.begin()) {
     logInfo("spiffs: failed to begin");
     abort();
@@ -51,9 +57,38 @@ void setup() {
     abort();
   }
 
+  animSetMode(AnimModeConnecting);
   wifiSetup("test");
+  WiFi.setSleep(false);
 
   senderSetup(&scheduler, logicRecv, NULL);
+
+  String host = "robot-";
+  host += String(chipIdInt, HEX);
+  ArduinoOTA.setHostname(host.c_str());
+  ArduinoOTA
+      .onStart([]() {
+        logicSetBrake(true, false);
+        String type;
+        if (ArduinoOTA.getCommand() == U_FLASH) {
+          logInfo("ota: start sketch update");
+        } else { // U_SPIFFS
+          SPIFFS.end();
+          logInfo("ota: start SPIFFS update");
+        }
+      })
+      .onEnd([]() { logInfo("ota: finished"); })
+      .onProgress([](unsigned int progress, unsigned int total) {
+        static uint32_t otaProgress = 0;
+        uint32_t p = (progress / (total / 100));
+        if (p != otaProgress) {
+          otaProgress = p;
+          logValue("ota: progress: ", otaProgress);
+        }
+      })
+      .onError([](ota_error_t error) { logValue("ota: error ", error); });
+
+  ArduinoOTA.begin();
 
   logInfo("setup: done");
 }
@@ -62,31 +97,23 @@ void motorsCb() { motors.tick(); }
 Task motorTask(25, TASK_FOREVER, &motorsCb, &scheduler, true);
 
 void batteryCb() {
-  static uint32_t vbatSum = 0;
-  static uint32_t vbatCount = 0;
-
-  vbatSum += analogRead(PIN_VBAT);
-  vbatCount++;
-
-  if (vbatCount < 20)
-    return;
-
   ProtocolMsgVbat msg;
   protocolInit(ProtocolCmdVbat, &msg);
   msg.unitId = logicGetUnitId();
-  msg.vbat = (vbatSum / vbatCount) * 4730 / 4095;
+  msg.vbat = logicGetVbat();
+  if (msg.vbat == 0) return;
 
   senderSendNow(&msg, sizeof(msg));
-  vbatSum = 0;
-  vbatCount = 0;
 }
-Task batteryTask(100, TASK_FOREVER, &batteryCb, &scheduler, true);
+Task batteryTask(1000, TASK_FOREVER, &batteryCb, &scheduler, true);
 
 void loop() {
   if (wifiHasIp()) {
     animSetMode(AnimModeNormal);
   }
 
+  ArduinoOTA.handle();
+  senderTick();
   player.loop();
   scheduler.execute();
   animTick();
@@ -121,6 +148,10 @@ void loop() {
     if (line.startsWith("u")) {
       line.remove(0, 1);
       logicSetUnitId(line.toInt());
+    }
+    if (line.startsWith("c")) {
+      line.remove(0, 1);
+      logicRunVbatCalib(line.toInt() != 0);
     }
   }
 }
