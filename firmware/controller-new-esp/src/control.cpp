@@ -61,7 +61,7 @@ void controlSetBrakeMask(uint8_t bm) { controlBrakeMask = bm & 0xf; }
 void controlSetup(Stream *serial, Scheduler *scheduler, ControlButtonCallback bcb) {
   buttonCallback = bcb;
   controlBrakeMask = 0; // 0b1110;
-  memset(controlPos, 0, sizeof(controlPos));
+  memset(controlPos, 128, sizeof(controlPos));
   cmd.begin(commands, serial);
 
   scheduler->addTask(adcTask);

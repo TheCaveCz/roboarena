@@ -13,3 +13,4 @@ enum AnimState:uint8_t {
 
 void animSetup();
 void animSetState(AnimState state);
+void animSetPresence(uint8_t p);

@@ -7,9 +7,13 @@
 #include <TaskSchedulerDeclarations.h>
 #include <ssd1306.h>
 #include <nano_engine.h>
+#include "anim.h"
+#include "wifi.h"
 
 uint8_t speeds[8];
 uint16_t vbats[5];
+uint32_t lastMessage[5];
+bool boost = false;
 
 uint8_t vbatIndex(uint8_t unitId) {
   switch (unitId) {
@@ -28,10 +32,20 @@ uint8_t vbatIndex(uint8_t unitId) {
   }
 }
 
+bool isPresent(uint8_t unitId) {
+  uint8_t idx = vbatIndex(unitId);
+  if (idx == 255)
+    return false;
+  return millis() - lastMessage[idx] < 5000;
+}
+
+void updatePresence() { animSetPresence(isPresent(1) | isPresent(2) << 1 | isPresent(3) << 2 | isPresent(4) << 3); }
+
 void senderReceive(ProtocolCmd cmd, void *buffer, size_t len) {
   if (cmd == ProtocolCmdMove) {
     ProtocolMsgMove *msg = (ProtocolMsgMove *)buffer;
     controlSetBrakeMask(msg->brakeMask);
+    boost = (msg->brakeMask & 0x80) != 0;
     memcpy(speeds, msg->speeds, sizeof(speeds));
 
   } else if (cmd == ProtocolCmdVbat) {
@@ -39,6 +53,8 @@ void senderReceive(ProtocolCmd cmd, void *buffer, size_t len) {
     uint8_t idx = vbatIndex(msg->unitId);
     if (idx != 255) {
       vbats[idx] = msg->vbat;
+      lastMessage[idx] = millis();
+      updatePresence();
     }
     logValue2("vbat info from ", msg->unitId, "vbat ", msg->vbat);
   }
@@ -49,8 +65,24 @@ size_t senderSend(uint8_t id, void *buffer) { return 0; }
 void buttonCallback(uint8_t buttonId, ButtonEventType et) {
   ProtocolMsgRemoteCtrl msg;
   protocolInit(ProtocolCmdRemoteCtrl, &msg);
-  if (et == EventLongStart && buttonId == 5) {
-    msg.command = ProtocolRemoteCommandCalibrate;
+  if (et == EventLongStart) {
+    switch (buttonId) {
+      case 1:
+        msg.command = ProtocolRemoteCommandBoostStart;
+        break;
+      case 2:
+        msg.command = ProtocolRemoteCommandBoostEnd;
+        break;
+      case 5:
+        msg.command = ProtocolRemoteCommandCalibrate;
+        break;
+      case 6:
+        wifiResetAndRestart();
+        return;
+      default:
+        return;
+    }
+
   } else if (et == EventPress) {
     switch (buttonId) {
       case 1:
@@ -90,6 +122,13 @@ public:
 };
 Canvas canvas;
 
+const uint8_t dispCross[] PROGMEM = {
+    0b10001,
+    0b01010,
+    0b00100,
+    0b01010,
+    0b10001,
+};
 
 void dispCb() {
   canvas.clear();
@@ -98,15 +137,32 @@ void dispCb() {
 
     uint8_t x = i * 32 + map(speeds[i * 2 + 1], 0, 255, 1, 29);
     uint8_t y = map(speeds[i * 2], 0, 255, 29, 1);
-    canvas.fillRect(x - 1, y - 1, x + 1, y + 1);
+    if (controlGetBrakeMask() & _BV(i)) {
+      canvas.drawBitmap1(x - 2, y - 2, 5, 8, dispCross);
+    } else {
+      canvas.fillRect(x - 1, y - 1, x + 1, y + 1);
+    }
 
     canvas.setCursor(i * 32 + 3, 32);
-    canvas.print(vbats[i] / 1000.0);
+    if (isPresent(i + 1)) {
+      canvas.print(vbats[i] / 1000.0);
+    } else {
+      canvas.print("----");
+    }
+  }
+
+  if (boost) {
+    canvas.setCursor(0, 48);
+    canvas.print("BOOST");
   }
 
   canvas.setCursor(0, 56);
   canvas.print("C:");
-  canvas.print(vbats[4] / 1000.0);
+  if (isPresent(255)) {
+    canvas.print(vbats[4] / 1000.0);
+  } else {
+    canvas.print("----");
+  }
   canvas.print(" R:");
   canvas.print(controlGetVbat() / 1000.0);
 

@@ -55,6 +55,7 @@ void setup() {
 
   animSetup();
   wifiSetup(ssid);
+  WiFi.setSleepMode(WIFI_NONE_SLEEP);
 
   server.on("/", serverHandleRoot);
   server.begin();
@@ -86,6 +87,7 @@ Task reportingTask(5000, TASK_FOREVER, &reportingCb, &scheduler);
 void loop() {
   ArduinoOTA.handle();
   server.handleClient();
+  senderTick();
   scheduler.execute();
 
   if (wifiHasIp()) {

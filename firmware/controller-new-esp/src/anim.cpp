@@ -4,7 +4,7 @@
 
 Ticker animTicker;
 AnimState animState;
-
+uint8_t animPresence;
 
 void animTickerCb() {
   switch (animState) {
@@ -26,14 +26,18 @@ void animTickerCb() {
       break;
 
     case AnimBlinkBrake:
-      Serial.write(controlGetBrakeMask() & 1 ? 'a' : 'A');
-      Serial.write(controlGetBrakeMask() & 2 ? 'b' : 'B');
-      Serial.write(controlGetBrakeMask() & 4 ? 'c' : 'C');
-      Serial.write(controlGetBrakeMask() & 8 ? 'd' : 'D');
+      Serial.write(controlGetBrakeMask() & 1 ? 'a' : (animPresence & 1 ? 'A' : 'a'));
+      Serial.write(controlGetBrakeMask() & 2 ? 'b' : (animPresence & 2 ? 'B' : 'b'));
+      Serial.write(controlGetBrakeMask() & 4 ? 'c' : (animPresence & 4 ? 'C' : 'c'));
+      Serial.write(controlGetBrakeMask() & 8 ? 'd' : (animPresence & 8 ? 'D' : 'd'));
       animState = AnimBlinkAll;
       break;
+
     case AnimBlinkAll:
-      Serial.print("ABCD");
+      Serial.write(animPresence & 1 ? 'A' : 'a');
+      Serial.write(animPresence & 2 ? 'B' : 'b');
+      Serial.write(animPresence & 4 ? 'C' : 'c');
+      Serial.write(animPresence & 8 ? 'D' : 'd');
       animState = AnimBlinkBrake;
       break;
 
@@ -50,6 +54,6 @@ void animSetup() {
   animTicker.attach(0.25, &animTickerCb);
 }
 
-void animSetState(AnimState state) {
-  animState = state;
-}
+void animSetState(AnimState state) { animState = state; }
+
+void animSetPresence(uint8_t p) { animPresence = p; }
