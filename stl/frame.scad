@@ -61,7 +61,7 @@ module motorBottom() {
     }
 }
 
-module motorTop() {
+module motorTop(ssize=6) {
     difference() {
         union() {
             cubexy(16,36,15,0);
@@ -73,7 +73,7 @@ module motorTop() {
         translate([0,-14,5]) # cylinder(d=6.2,h=20,$fn=6);
         translate([-8,-20,-1]) #cube([1.2,40,20]);
     }
-    translate([8-6,0,10]) motorStop(6);
+    translate([8-ssize,0,10]) motorStop(ssize);
 }
 
 module motorStop(h) {
