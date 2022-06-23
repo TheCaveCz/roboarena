@@ -84,7 +84,6 @@ void senderReceive(ProtocolCmd cmd, const void *buffer, size_t len) {
     uint8_t idx = vbatIndex(msg->unitId);
     if (idx != 255) {
       lastMessage[idx] = millis();
-      updatePresence();
     }
   }
 }
@@ -118,6 +117,7 @@ void batteryCb() {
   msg.unitId = 255;
   msg.vbat = controlGetVbat();
   senderSendNow(&msg, sizeof(msg));
+  updatePresence();
 }
 Task batteryTask(1000, TASK_FOREVER, &batteryCb);
 

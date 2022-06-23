@@ -56,7 +56,6 @@ void senderReceive(ProtocolCmd cmd, const void *buffer, size_t len) {
     if (idx != 255) {
       vbats[idx] = msg->vbat;
       lastMessage[idx] = millis();
-      updatePresence();
     }
     logValue2("vbat info from ", msg->unitId, "vbat ", msg->vbat);
   }
@@ -173,6 +172,7 @@ void dispCb() {
   canvas.blt();
 }
 Task dispTask(100, TASK_FOREVER, &dispCb);
+Task presenceTask(1000, TASK_FOREVER, &updatePresence);
 
 void logicSetup(Scheduler *scheduler) {
   memset(speeds, 128, sizeof(speeds));
@@ -180,7 +180,9 @@ void logicSetup(Scheduler *scheduler) {
   canvas.clear();
 
   scheduler->addTask(dispTask);
+  scheduler->addTask(presenceTask);
   dispTask.enable();
+  presenceTask.enable();
 }
 
 #endif
