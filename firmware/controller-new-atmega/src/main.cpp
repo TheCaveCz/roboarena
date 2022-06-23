@@ -2,6 +2,8 @@
 #include <TaskScheduler.h>
 #include <OneButton.h>
 #include "pinmap.h"
+#include "Commander.h"
+
 
 #define controlStream Serial1
 
@@ -12,6 +14,7 @@ OneButton btn4(PIN_BTN4, 1);
 OneButton btn5(PIN_BTN5, 1);
 OneButton btn6(PIN_BTN6, 1);
 Scheduler scheduler;
+Commander cmd;
 
 int adcBases[8];
 const uint8_t adcPins[8] = {PIN_C1X, PIN_C1Y, PIN_C2X, PIN_C2Y, PIN_C3X, PIN_C3Y, PIN_C4X, PIN_C4Y};
@@ -71,11 +74,41 @@ void btnLongStop(void *param) {
   controlStream.write('\n');
 }
 
+COMMAND(cmdLeds) {
+  uint8_t led = cmd.parseHex(buf[1]);
+  digitalWrite(PIN_LED1, led & 1);
+  digitalWrite(PIN_LED2, led & 2);
+  digitalWrite(PIN_LED3, led & 4);
+  digitalWrite(PIN_LED4, led & 8);
+}
+
+COMMAND(cmdReport) {
+  uint8_t en = cmd.parseHex(buf[1]);
+  if (en) {
+    adcTask.enableIfNot();
+  } else {
+    adcTask.disable();
+  }
+}
+
+COMMAND(cmdCalib) {
+  if (buf[1] == '^' && buf[2] == '!') {
+    adcCalibrate();
+  }
+}
+
+const Command commands[] = {
+    {'L', 2, cmdLeds},   //
+    {'R', 2, cmdReport}, //
+    {'X', 3, cmdCalib},  //
+    {0, 0, NULL}         //
+};
+
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(57600);
   Serial.println();
 
-  controlStream.begin(57600);
+  controlStream.begin(19200);
   controlStream.println();
 
   pinMode(PIN_LED1, OUTPUT);
@@ -117,6 +150,8 @@ void setup() {
 
   adcCalibrate();
   adcTask.enable();
+
+  cmd.begin(commands, &controlStream);
 }
 
 void loop() {
@@ -128,44 +163,5 @@ void loop() {
   btn6.tick();
 
   scheduler.execute();
-
-  while (controlStream.available()) {
-    int ch = controlStream.read();
-    Serial.write(ch);
-    switch (ch) {
-      case 'A':
-        digitalWrite(PIN_LED1, 1);
-        break;
-      case 'B':
-        digitalWrite(PIN_LED2, 1);
-        break;
-      case 'C':
-        digitalWrite(PIN_LED3, 1);
-        break;
-      case 'D':
-        digitalWrite(PIN_LED4, 1);
-        break;
-      case 'a':
-        digitalWrite(PIN_LED1, 0);
-        break;
-      case 'b':
-        digitalWrite(PIN_LED2, 0);
-        break;
-      case 'c':
-        digitalWrite(PIN_LED3, 0);
-        break;
-      case 'd':
-        digitalWrite(PIN_LED4, 0);
-        break;
-      case 'R':
-        adcTask.enableIfNot();
-        break;
-      case 'r':
-        adcTask.disable();
-        break;
-      case 'X':
-        adcCalibrate();
-        break;
-    }
-  }
+  cmd.check();
 }

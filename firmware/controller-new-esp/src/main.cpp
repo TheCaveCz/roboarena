@@ -49,10 +49,10 @@ void serverHandleRoot() {
 
 void reportingCb() {
 #if LOGIC_CONTROLLER
-  Serial.print("R"); // enable controller positions reporting
+  Serial.println("R1"); // enable controller positions reporting
 #endif
 #if LOGIC_REMOTE
-  Serial.print("r"); // disable controller positions reporting
+  Serial.println("R0"); // disable controller positions reporting
 #endif
 }
 
@@ -64,8 +64,8 @@ void setup() {
 
   delay(2000);
 
-  Serial.begin(57600);
-  Serial.print("rabcd"); // turn off all leds and disable controller reporting
+  Serial.begin(19200);
+  Serial.println("R0"); // disable controller reporting
   logInfo("Roboarena ctrl!!!");
 
   controlSetup(&Serial, &scheduler, buttonCallback);

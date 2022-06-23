@@ -70,7 +70,7 @@ void senderReceive(ProtocolCmd cmd, const void *buffer, size_t len) {
         boost = false;
         break;
       case ProtocolRemoteCommandCalibrate:
-        Serial.write('X');
+        Serial.println("X^!");
         break;
       case ProtocolRemoteCommandBoostStart:
         boost = true;
