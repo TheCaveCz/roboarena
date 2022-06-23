@@ -1,4 +1,5 @@
 #include "wifi.h"
+#if USE_WIFI
 
 #include <ESP8266WiFi.h>
 #include <WiFiManager.h>
@@ -60,3 +61,4 @@ void wifiSetup(const String &ssid) {
     WiFi.begin();
   }
 }
+#endif

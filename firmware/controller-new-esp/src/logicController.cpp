@@ -1,7 +1,9 @@
 #if LOGIC_CONTROLLER
 #include "logic.h"
 #include "control.h"
+#if USE_WIFI
 #include "wifi.h"
+#endif
 #include <sender.h>
 #include "anim.h"
 
@@ -44,7 +46,7 @@ bool isPresent(uint8_t unitId) {
 
 void updatePresence() { animSetPresence(isPresent(1) | isPresent(2) << 1 | isPresent(3) << 2 | isPresent(4) << 3); }
 
-void senderReceive(ProtocolCmd cmd, void *buffer, size_t len) {
+void senderReceive(ProtocolCmd cmd, const void *buffer, size_t len) {
   if (cmd == ProtocolCmdRemoteCtrl) {
     ProtocolMsgRemoteCtrl *msg = (ProtocolMsgRemoteCtrl *)buffer;
     switch (msg->command) {
@@ -103,9 +105,11 @@ size_t senderSend(uint8_t id, void *buffer) {
 }
 
 void buttonCallback(uint8_t buttonId, ButtonEventType et) {
+#if USE_WIFI
   if (buttonId == 6 && et == EventPress) {
     wifiResetAndRestart();
   }
+#endif
 }
 
 void batteryCb() {

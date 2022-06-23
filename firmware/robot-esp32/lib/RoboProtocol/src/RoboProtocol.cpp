@@ -7,7 +7,7 @@ void protocolInit(ProtocolCmd cmd, void *buffer) {
   hdr->cmd = cmd;
 }
 
-ProtocolCmd protocolCheck(void *buffer, size_t len) {
+ProtocolCmd protocolCheck(const void *buffer, size_t len) {
   if (len < 2) {
     return ProtocolCmdInvalid;
   }

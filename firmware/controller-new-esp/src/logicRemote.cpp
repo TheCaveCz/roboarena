@@ -8,7 +8,9 @@
 #include <ssd1306.h>
 #include <nano_engine.h>
 #include "anim.h"
+#if USE_WIFI
 #include "wifi.h"
+#endif
 
 uint8_t speeds[8];
 uint16_t vbats[5];
@@ -41,7 +43,7 @@ bool isPresent(uint8_t unitId) {
 
 void updatePresence() { animSetPresence(isPresent(1) | isPresent(2) << 1 | isPresent(3) << 2 | isPresent(4) << 3); }
 
-void senderReceive(ProtocolCmd cmd, void *buffer, size_t len) {
+void senderReceive(ProtocolCmd cmd, const void *buffer, size_t len) {
   if (cmd == ProtocolCmdMove) {
     ProtocolMsgMove *msg = (ProtocolMsgMove *)buffer;
     controlSetBrakeMask(msg->brakeMask);
@@ -76,9 +78,11 @@ void buttonCallback(uint8_t buttonId, ButtonEventType et) {
       case 5:
         msg.command = ProtocolRemoteCommandCalibrate;
         break;
+#if USE_WIFI
       case 6:
         wifiResetAndRestart();
         return;
+#endif
       default:
         return;
     }

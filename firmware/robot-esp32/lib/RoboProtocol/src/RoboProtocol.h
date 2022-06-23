@@ -66,4 +66,4 @@ struct __attribute__((packed)) ProtocolMsgDiscoverResponse {
 };
 
 void protocolInit(ProtocolCmd cmd, void *buffer);
-ProtocolCmd protocolCheck(void *buffer, size_t len);
+ProtocolCmd protocolCheck(const void *buffer, size_t len);

@@ -1,15 +1,18 @@
 #include <Arduino.h>
 #include <TaskScheduler.h>
-#include <ArduinoOTA.h>
 #include <Ticker.h>
 #include <log.h>
-#include <ESP8266WebServer.h>
-#include "wifi.h"
 #include "control.h"
 #include <sender.h>
 #include "anim.h"
 #include "logic.h"
 #include "disp.h"
+
+#if USE_WIFI
+#include <ArduinoOTA.h>
+#include <ESP8266WebServer.h>
+#include "wifi.h"
+#endif
 
 #if LOGIC_CONTROLLER
 #define HOSTNAME_PREFIX "tc-roboctrl-"
@@ -21,6 +24,8 @@
 
 String ssid;
 Scheduler scheduler;
+
+#if USE_WIFI
 ESP8266WebServer server;
 
 void serverHandleRoot() {
@@ -40,6 +45,18 @@ void serverHandleRoot() {
 
   server.send(200, "text/plain", response);
 }
+#endif
+
+void reportingCb() {
+#if LOGIC_CONTROLLER
+  Serial.print("R"); // enable controller positions reporting
+#endif
+#if LOGIC_REMOTE
+  Serial.print("r"); // disable controller positions reporting
+#endif
+}
+
+Task reportingTask(5000, TASK_FOREVER, &reportingCb, &scheduler);
 
 void setup() {
   ssid = HOSTNAME_PREFIX;
@@ -54,6 +71,8 @@ void setup() {
   controlSetup(&Serial, &scheduler, buttonCallback);
 
   animSetup();
+
+#if USE_WIFI
   wifiSetup(ssid);
   WiFi.setSleepMode(WIFI_NONE_SLEEP);
 
@@ -66,32 +85,30 @@ void setup() {
 #endif
   ArduinoOTA.onStart([]() { logInfo("Starting OTA"); });
   ArduinoOTA.begin();
-
+#endif
   senderSetup(&scheduler, senderReceive, senderSend);
 
   logicSetup(&scheduler);
   dispSetup(&scheduler);
-}
 
-void reportingCb() {
-#if LOGIC_CONTROLLER
-  Serial.print("R"); // enable controller positions reporting
-#endif
-#if LOGIC_REMOTE
-  Serial.print("r"); // disable controller positions reporting
+#if !USE_WIFI
+  animSetState(AnimBlinkBrake);
+  reportingTask.enable();
 #endif
 }
-
-Task reportingTask(5000, TASK_FOREVER, &reportingCb, &scheduler);
 
 void loop() {
+#if USE_WIFI
   ArduinoOTA.handle();
   server.handleClient();
+#endif
   senderTick();
   scheduler.execute();
 
+#if USE_WIFI
   if (wifiHasIp()) {
     animSetState(AnimBlinkBrake);
     reportingTask.enable();
   }
+#endif
 }
