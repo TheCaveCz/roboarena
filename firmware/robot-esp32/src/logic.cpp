@@ -21,12 +21,7 @@ static Config config;
 static uint32_t vbat;
 
 void logicSetSpeed(uint8_t sx, uint8_t sy) {
-  if (sx > (128 - deadZone) && sx < (128 + deadZone))
-    sx = 128;
-  if (sy > (128 - deadZone) && sy < (128 + deadZone))
-    sy = 128;
   int p = sx;
-
   int q = sy - 128;
   int m1 = constrain(p + q, 0, 255);
   int m2 = constrain(p - q, 0, 255);

@@ -26,16 +26,22 @@ void writeHex(uint8_t v) {
 }
 
 int adcRemap(const int val, const int base) {
-  if (val < 0)
-    return map(val, -base, 0, 0, 128);
+  if (val < 16)
+    return 0;
+  else if (val < base)
+    return map(val, 16, base, 0, 128);
+  else if (val > 1023-16)
+    return 255;
   else
-    return map(val, 0, 1023 - base, 128, 255);
+    return map(val, base, 1023-16, 128, 255);
 }
 
 void adcCallback() {
   uint8_t adcValues[8];
+  int ar;
   for (uint8_t i = 0; i < 8; i++) {
-    adcValues[i] = adcRemap(analogRead(adcPins[i]) - adcBases[i], adcBases[i]);
+    ar = analogRead(adcPins[i]);
+    adcValues[i] = adcRemap(ar, adcBases[i]);
   }
 
   controlStream.write('Z');
