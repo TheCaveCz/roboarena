@@ -48,6 +48,9 @@ void animCb() {
   if (mode == AnimModeBrake) {
     scale = animTask.getRunCounter() % 40;
     scale = NeoEase::QuadraticInOut(abs((scale / 39.0f) * 2.0f - 1.0f));
+  } else if (mode == AnimModeBoost) {
+    scale = animTask.getRunCounter() % 15;
+    scale = NeoEase::QuadraticInOut(abs((scale / 14.0f) * 2.0f - 1.0f)) * 0.5f + 0.75f;
   }
   animRefreshColors();
 }
@@ -62,7 +65,7 @@ void animSetup(Scheduler *scheduler) {
   highlight = 0;
 
   strip.Begin();
-  
+
   scheduler->addTask(animTask);
   animSetMode(AnimModeNormal);
   strip.Show();
@@ -89,6 +92,12 @@ void animSetMode(AnimMode m) {
       break;
 
     case AnimModeBrake:
+      mode = m;
+      animTask.setInterval(20);
+      animTask.restart();
+      break;
+
+    case AnimModeBoost:
       mode = m;
       animTask.setInterval(20);
       animTask.restart();

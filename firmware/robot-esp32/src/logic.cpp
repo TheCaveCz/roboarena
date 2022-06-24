@@ -17,6 +17,7 @@ static Motors *motors;
 static MP3Player *player;
 const uint8_t deadZone = 15;
 static bool logicBrake;
+static bool logicBoost;
 static Config config;
 static uint32_t vbat;
 
@@ -31,6 +32,8 @@ void logicSetSpeed(uint8_t sx, uint8_t sy) {
   motors->setSpeed(m1f, m2f);
 }
 
+void logicUpdateAnim() { animSetMode(logicBrake ? AnimModeBrake : (logicBoost ? AnimModeBoost : AnimModeNormal)); }
+
 void logicSetBrake(bool brake, bool sound) {
   if (brake == logicBrake)
     return;
@@ -38,11 +41,22 @@ void logicSetBrake(bool brake, bool sound) {
   logicBrake = brake;
 
   motors->setBrake(brake);
-  animSetMode(brake ? AnimModeBrake : AnimModeNormal);
+  logicUpdateAnim();
 
   if (sound) {
-    player->play(brake ? "/dead-2.mp3" : "/start-1.mp3");
+    player->play(brake ? "/dead-2.mp3" : "/start-2.mp3");
   }
+}
+
+void logicSetBoost(bool boost) {
+  if (boost == logicBoost)
+    return;
+  logValue("logic: boost=", boost);
+  logicBoost = boost;
+
+  motors->setMaxSpeed(boost ? 0.75 : 0.5);
+
+  logicUpdateAnim();
 }
 
 void logicRecv(ProtocolCmd cmd, const void *buffer, size_t len) {
@@ -51,7 +65,7 @@ void logicRecv(ProtocolCmd cmd, const void *buffer, size_t len) {
     uint8_t index = logicGetUnitId() - 1;
     logicSetSpeed(msg->speeds[index * 2], msg->speeds[index * 2 + 1]);
     logicSetBrake(msg->brakeMask & _BV(index) ? true : false);
-    motors->setMaxSpeed(msg->brakeMask & 0x80 ? 0.75 : 0.5);
+    logicSetBoost(msg->brakeMask & 0x80 ? true : false);
 
   } else if (cmd == ProtocolCmdDiscoverRequest) {
     ProtocolMsgDiscoverResponse response;

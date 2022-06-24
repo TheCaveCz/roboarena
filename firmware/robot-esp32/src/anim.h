@@ -7,6 +7,7 @@ enum AnimMode: uint8_t {
   AnimModeConnecting,
   AnimModeNormal,
   AnimModeBrake,
+  AnimModeBoost,
 };
 
 enum AnimColor: uint8_t {
