@@ -1,10 +1,12 @@
 #include "sender.h"
-#include <WiFiUdp.h>
 #include <log.h>
 #include <RoboProtocol.h>
 #if ESP32
+#include <WiFi.h>
+#include <esp_wifi.h>
 #include <esp_now.h>
 #else
+#include <user_interface.h>
 #include <espnow.h>
 #endif
 
@@ -21,11 +23,36 @@ void senderSendNow(void *buffer, size_t len) { senderSendNow(buffer, len, broadc
 uint8_t *senderGetMac() { return lastMac; }
 
 #if ESP32
+
+#define SENDER_MAX_LEN 32
+struct SenderQueueItem {
+  uint8_t mac[6];
+  int len;
+  uint8_t data[SENDER_MAX_LEN];
+};
+
+xQueueHandle senderQueue = NULL;
+
 void espNowRecvCb(const uint8_t *mac, const uint8_t *data, int len) {
-  memcpy(lastMac, mac, sizeof(lastMac));
-  ProtocolCmd cmd = protocolCheck(data, len);
-  if (cmd != ProtocolCmdInvalid && recvCallback) {
-    recvCallback(cmd, data, len);
+  SenderQueueItem item;
+
+  if (len > SENDER_MAX_LEN || mac == NULL || data == NULL || len <= 0)
+    return;
+
+  memcpy(item.mac, mac, sizeof(item.mac));
+  item.len = len;
+  memcpy(item.data, data, len);
+  xQueueSend(senderQueue, &item, 1024);
+}
+
+void senderTick() {
+  SenderQueueItem item;
+  while (xQueueReceive(senderQueue, &item, 0) == pdTRUE) {
+    ProtocolCmd cmd = protocolCheck(item.data, item.len);
+    if (cmd != ProtocolCmdInvalid && recvCallback) {
+      memcpy(lastMac, item.mac, sizeof(item.mac));
+      recvCallback(cmd, item.data, item.len);
+    }
   }
 }
 #else
@@ -36,10 +63,9 @@ void espNowRecvCb(uint8_t *mac, uint8_t *data, uint8_t len) {
     recvCallback(cmd, data, len);
   }
 }
-#endif
-
 
 void senderTick() {}
+#endif
 
 void senderCb() {
   if (sendCallback == NULL)
@@ -68,9 +94,12 @@ void senderSetup(Scheduler *scheduler, SenderRecvCallback _rcb, SenderSendCallba
   recvCallback = _rcb;
 
 #if !USE_WIFI
-#if ESP32
-#else
   logValue("sender: setting radio to station and channel ", SENDER_CHANNEL);
+#if ESP32
+  WiFi.persistent(false);
+  WiFi.begin("dummy", NULL, SENDER_CHANNEL, NULL, false);
+  ESP_ERROR_CHECK(esp_wifi_set_channel(SENDER_CHANNEL, WIFI_SECOND_CHAN_NONE));
+#else
   wifi_set_opmode_current(1); // station
   wifi_set_channel(SENDER_CHANNEL);
 #endif
@@ -80,23 +109,20 @@ void senderSetup(Scheduler *scheduler, SenderRecvCallback _rcb, SenderSendCallba
     logInfo("sender: failed init");
   }
 #if ESP32
+  senderQueue = xQueueCreate(100, sizeof(SenderQueueItem));
+
   esp_now_peer_info_t peerInfo = {};
   memcpy(&peerInfo.peer_addr, broadcastMac, sizeof(broadcastMac));
-  peerInfo.chanel = SENDER_CHANNEL;
+  peerInfo.channel = SENDER_CHANNEL;
+  peerInfo.ifidx = ESP_IF_WIFI_STA;
+  peerInfo.encrypt = false;
   if (!esp_now_is_peer_exist(broadcastMac)) {
     esp_now_add_peer(&peerInfo);
   }
 #else
-  if (esp_now_set_self_role(ESP_NOW_ROLE_CONTROLLER)) {
-    logInfo("sender: set role failed");
-  }
-
-  if (esp_now_is_peer_exist(broadcastMac)) {
-    logInfo("sender: broadcast peer exists");
-  } else {
-    if (esp_now_add_peer(broadcastMac, ESP_NOW_ROLE_CONTROLLER, SENDER_CHANNEL, NULL, 0)) {
-      logInfo("sender: failed to add peer");
-    }
+  esp_now_set_self_role(ESP_NOW_ROLE_CONTROLLER);
+  if (!esp_now_is_peer_exist(broadcastMac)) {
+    esp_now_add_peer(broadcastMac, ESP_NOW_ROLE_CONTROLLER, SENDER_CHANNEL, NULL, 0);
   }
 #endif
   if (esp_now_register_recv_cb(espNowRecvCb)) {

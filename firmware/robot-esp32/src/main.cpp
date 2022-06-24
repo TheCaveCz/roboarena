@@ -2,20 +2,20 @@
 #include <SPIFFS.h>
 #include <log.h>
 #include <SPI.h>
-#include <WebServer.h>
 #include <TaskScheduler.h>
-#include <ArduinoOTA.h>
 
 #include "pinmap.h"
 #include "MP3Player.h"
 #include "Motors.h"
-#include "xwifi.h"
 #include <sender.h>
 #include "accel.h"
 #include "logic.h"
 #include "anim.h"
 
-WebServer server;
+#if USE_WIFI
+#include <ArduinoOTA.h>
+#include "xwifi.h"
+#endif
 Motors motors;
 MP3Player player;
 Scheduler scheduler;
@@ -50,16 +50,15 @@ void setup() {
   }
 
   accelSetup(PIN_SDA, PIN_SCL, &scheduler);
-  
+
   if (!logicSetup(&scheduler, &motors, &player)) {
     abort();
   }
 
+#if USE_WIFI
   animSetMode(AnimModeConnecting);
   wifiSetup("test");
   WiFi.setSleep(false);
-
-  senderSetup(&scheduler, logicRecv, NULL);
 
   String host = "robot-";
   host += String(chipIdInt, HEX);
@@ -87,6 +86,10 @@ void setup() {
       .onError([](ota_error_t error) { logValue("ota: error ", error); });
 
   ArduinoOTA.begin();
+#else
+  animSetMode(AnimModeNormal);
+#endif
+  senderSetup(&scheduler, logicRecv, NULL);
 
   logInfo("setup: done");
 }
@@ -99,57 +102,60 @@ void batteryCb() {
   protocolInit(ProtocolCmdVbat, &msg);
   msg.unitId = logicGetUnitId();
   msg.vbat = logicGetVbat();
-  if (msg.vbat == 0) return;
+  if (msg.vbat == 0)
+    return;
 
   senderSendNow(&msg, sizeof(msg));
 }
 Task batteryTask(1000, TASK_FOREVER, &batteryCb, &scheduler, true);
 
 void loop() {
+#if USE_WIFI
   if (wifiHasIp()) {
     animSetMode(AnimModeNormal);
   }
 
   ArduinoOTA.handle();
+#endif
   senderTick();
   player.loop();
   scheduler.execute();
   animTick();
   accelTick();
-/*
-  if (Serial.available()) {
-    String line = Serial.readStringUntil('\n');
-    line.trim();
-    if (line.startsWith("p")) {
-      line.remove(0, 1);
-      motors.setP(line.toInt() / 1000.0f);
-    }
-    if (line.startsWith("i")) {
-      line.remove(0, 1);
-      motors.setI(line.toInt() / 1000.0f);
-    }
-    if (line.startsWith("d")) {
-      line.remove(0, 1);
-      motors.setD(line.toInt() / 1000.0f);
-    }
-    if (line.startsWith("f")) {
-      line.remove(0, 1);
-      motors.setF(line.toInt() / 1000.0f);
-    }
-    if (line.startsWith("m")) {
-      line.remove(0, 1);
-      motors.setMaxSpeed(line.toInt() / 100.0f);
-    }
-    if (line.startsWith("?")) {
-      motors.dumpPid();
-    }
-    if (line.startsWith("u")) {
-      line.remove(0, 1);
-      logicSetUnitId(line.toInt());
-    }
-    if (line.startsWith("c")) {
-      line.remove(0, 1);
-      logicRunVbatCalib(line.toInt() != 0);
-    }
-  }*/
+  /*
+    if (Serial.available()) {
+      String line = Serial.readStringUntil('\n');
+      line.trim();
+      if (line.startsWith("p")) {
+        line.remove(0, 1);
+        motors.setP(line.toInt() / 1000.0f);
+      }
+      if (line.startsWith("i")) {
+        line.remove(0, 1);
+        motors.setI(line.toInt() / 1000.0f);
+      }
+      if (line.startsWith("d")) {
+        line.remove(0, 1);
+        motors.setD(line.toInt() / 1000.0f);
+      }
+      if (line.startsWith("f")) {
+        line.remove(0, 1);
+        motors.setF(line.toInt() / 1000.0f);
+      }
+      if (line.startsWith("m")) {
+        line.remove(0, 1);
+        motors.setMaxSpeed(line.toInt() / 100.0f);
+      }
+      if (line.startsWith("?")) {
+        motors.dumpPid();
+      }
+      if (line.startsWith("u")) {
+        line.remove(0, 1);
+        logicSetUnitId(line.toInt());
+      }
+      if (line.startsWith("c")) {
+        line.remove(0, 1);
+        logicRunVbatCalib(line.toInt() != 0);
+      }
+    }*/
 }

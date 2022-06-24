@@ -50,9 +50,9 @@ void logicSetBrake(bool brake, bool sound) {
   }
 }
 
-void logicRecv(ProtocolCmd cmd, void *buffer, size_t len) {
+void logicRecv(ProtocolCmd cmd, const void *buffer, size_t len) {
   if (cmd == ProtocolCmdMove && logicValidUnitId()) {
-    ProtocolMsgMove *msg = (ProtocolMsgMove *)buffer;
+    const ProtocolMsgMove *msg = (const ProtocolMsgMove *)buffer;
     uint8_t index = logicGetUnitId() - 1;
     logicSetSpeed(msg->speeds[index * 2], msg->speeds[index * 2 + 1]);
     logicSetBrake(msg->brakeMask & _BV(index) ? true : false);
@@ -64,12 +64,12 @@ void logicRecv(ProtocolCmd cmd, void *buffer, size_t len) {
     response.unitId = logicGetUnitId();
     response.fwVersion = FW_VERSION;
     esp_efuse_mac_get_default(response.mac);
-    senderSendNow(&response, sizeof(response), senderGetIp(), senderGetPort());
+    senderSendNow(&response, sizeof(response));
 
-  } else if (cmd == ProtocolCmdSetId) {
+  } /* else if (cmd == ProtocolCmdSetId) {
     ProtocolMsgSetId *msg = (ProtocolMsgSetId *)buffer;
     logicSetUnitId(msg->unitId);
-  }
+  }*/
 }
 
 void logicUpdateAnimColor() {

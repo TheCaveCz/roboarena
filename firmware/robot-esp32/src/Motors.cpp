@@ -3,7 +3,6 @@
 #include <soc/mcpwm_struct.h>
 #include "pinmap.h"
 #include <log.h>
-#include <soc/rtc.h>
 
 
 #define CAP0_INT_EN BIT(27) // Capture 0 interrupt bit

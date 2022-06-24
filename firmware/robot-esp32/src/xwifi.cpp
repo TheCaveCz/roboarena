@@ -1,5 +1,5 @@
 #include "xwifi.h"
-
+#if USE_WIFI
 #include <WiFi.h>
 #include <log.h>
 
@@ -77,3 +77,4 @@ void wifiSetup(const String &ssid) {
     WiFi.begin();
   }
 }
+#endif
