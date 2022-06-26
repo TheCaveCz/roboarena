@@ -10,13 +10,26 @@
 		{
 			"name": "robot-esp32",
 			"path": "robot-esp32"
+		},
+		{
+			"name": "signal",
+			"path": "signal"
 		}
 	],
 	"settings": {
 		"files.associations": {
 			"ostream": "cpp",
 			"*.tcc": "cpp",
-			"cmath": "cpp"
+			"cmath": "cpp",
+			"array": "cpp",
+			"deque": "cpp",
+			"list": "cpp",
+			"string": "cpp",
+			"unordered_map": "cpp",
+			"vector": "cpp",
+			"initializer_list": "cpp",
+			"unordered_set": "cpp",
+			"string_view": "cpp"
 		}
 	}
 }
