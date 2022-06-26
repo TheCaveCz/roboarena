@@ -57,6 +57,9 @@ void logicSetBoost(bool boost) {
   motors->setMaxSpeed(boost ? 0.75 : 0.5);
 
   logicUpdateAnim();
+  if (boost && !player->isPlaying()) {
+    player->play("/dead-3.mp3");
+  }
 }
 
 void logicRecv(ProtocolCmd cmd, const void *buffer, size_t len) {
