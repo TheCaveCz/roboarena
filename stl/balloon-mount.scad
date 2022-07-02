@@ -69,13 +69,25 @@ module clamp() {
     }
 }
 
+module clamp2() {
+    translate([-7.9/2,0,0]) cube([7.9,20,2]);
+    
+    translate([-1-4,24,0]) cube([4,14,3]);
+    translate([1,24,0]) cube([4,14,3]);
+    translate([-11,20,0]) cube([22,4,3]);
+    translate([-7-4,24,0]) cube([4,8,3]);
+    translate([7,24,0]) cube([4,8,3]);
+    translate([5,34,0]) cube([6,4,3]);
+    translate([-5-6,34,0]) cube([6,4,3]);
+}
+
 module render() {
     translate([30,0,0]) valve1();
     translate([-30,0,0]) valve2();
     translate([0,0,0]) mount();
     translate([0,-60,0]) lock();
     translate([40,-40,0]) rotate([90,0,180]) clamp();
-    
+    translate([-30,-60,0]) clamp2();    
 }
 
 module preview(stack=0) {
